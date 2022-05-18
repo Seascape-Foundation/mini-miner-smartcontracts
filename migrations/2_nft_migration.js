@@ -6,6 +6,3 @@ module.exports = async function(deployer, network) {
             console.log("MinerTransaction contract was deployed at address: "+ MinerTransaction.address);
         });
 };
-
-
-//bsctestnet address: 0x5a20372B6a1bC8E612f8128afc5BD01AecbaC52f;

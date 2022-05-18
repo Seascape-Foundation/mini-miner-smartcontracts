@@ -49,7 +49,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
 
   //stake mine NFT
-  function importNft(uint256 _nftId, uint8 _v, bytes32[2] calldata sig) external {
+  function importNft(uint256 _nftId, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_nftId > 0, "MinerGame: nft Id invalid");
 
     MinerTransaction nft = MinerTransaction(mineNft);
@@ -59,7 +59,7 @@ contract MinerGame is IERC721Receiver, Ownable{
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
       bytes32 message         = keccak256(abi.encodePacked(_nftId, msg.sender));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
-      address recover         = ecrecover(hash, _v, sig[0], sig[1]);
+      address recover         = ecrecover(hash, _v, _r, _s);
 
       require(recover == verifier, "Verification failed about stakeToken");
     }
@@ -105,7 +105,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //Exchange  gold coins for tokens
-  function goldChangeToken(uint256 _gold, uint8 _v, bytes32[2] calldata sig) external {
+  function goldChangeToken(uint256 _gold, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_gold > 0, "MinerGame: The exchange amount must greater than zero");
 
     PlayerParams storage _player = player[msg.sender];
@@ -114,7 +114,7 @@ contract MinerGame is IERC721Receiver, Ownable{
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
       bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
-      address recover         = ecrecover(hash, _v, sig[0], sig[1]);
+      address recover         = ecrecover(hash, _v, _r, _s);
 
       require(recover == verifier, "Verification failed about stakeToken");
     }

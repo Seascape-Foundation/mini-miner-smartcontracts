@@ -1,15 +1,12 @@
-var MinerNFTFactory = artifacts.require("./MinerNFTFactory.sol");
-// var OreNft = artifacts.require("./OreNft.sol");
+var MinerNFTFactory  = artifacts.require("./MinerNFTFactory.sol");
+var MinerTransaction = artifacts.require("./MinerTransaction.sol");
 
 
-let _minerTransaction = "0x5a20372B6a1bC8E612f8128afc5BD01AecbaC52f";
+// let _minerTransaction = "0x55dB2CEA7AcF1bCa8FbfbB93B732BDc1d3A3ebce";
 
 module.exports = async function(deployer, network) {
    
-        await deployer.deploy(MinerNFTFactory, _minerTransaction).then(function(){
+        await deployer.deploy(MinerNFTFactory, MinerTransaction.address).then(function(){
             console.log("MinerNFTFactory contract was deployed at address: "+ MinerNFTFactory.address);
         });
 };
-
-
-//bsctestnet address: 0xCeE733CA0fF7e1F7Ea276734051C23CA46547e34
