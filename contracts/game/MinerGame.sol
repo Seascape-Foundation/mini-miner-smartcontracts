@@ -31,6 +31,13 @@ contract MinerGame is IERC721Receiver, Ownable{
   mapping(address => bool) public changeAllowed;
   mapping(uint8 => address) public token;
 
+  event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time);
+  event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
+  event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
+  event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
+  event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
+  event AddToken(address indexed tokenAddress, uint8 indexed typeId, uint256 time);
+
   constructor(address _token, address _nft, address _verifier) public {
     require(_token != address(0), "MinerGame: Token can't be zero address");
     require(_nft != address(0), "MinerGame: Nft can't be zero address");
@@ -43,14 +50,6 @@ contract MinerGame is IERC721Receiver, Ownable{
     changeAllowed[_token] = true;
     token[typeId]     = _token;
   }
-
-  event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time);
-  event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
-  event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
-  event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
-  event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
-  event AddToken(address indexed tokenAddress, uint8 indexed typeId, uint256 time);
-
 
   //stake mine NFT
   function importNft(uint256 _nftId, uint8 _v, bytes32 _r, bytes32 _s) external {
