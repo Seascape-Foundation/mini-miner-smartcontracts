@@ -46,6 +46,8 @@ contract MinerGame is IERC721Receiver, Ownable{
   event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
   event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
   event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
+  event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
+  event AddToken(address indexed tokenAddress, uint8 indexed typeId, uint256 time);
 
 
   //stake mine NFT
@@ -177,6 +179,8 @@ contract MinerGame is IERC721Receiver, Ownable{
     require(_amount > 0, "MinerGame: Must be greater than 0");
 
     _safeTransfer(_token, owner(), _amount);
+
+    emit Withdraw(_token, _amount, msg.sender, block.timestamp);
   }
 
   //Add tokens that can be exchanged for gold
@@ -186,6 +190,8 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     tokenType[_token] = true;
     token[++typeId] = _token;
+
+    emit AddToken(_token, typeId, block.timestamp);
   }
 
   //Change the ratio of tokens to gold coins
