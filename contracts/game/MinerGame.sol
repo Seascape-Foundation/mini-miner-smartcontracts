@@ -25,7 +25,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   mapping(address => PlayerParams) public player;
-  mapping(uint256 => address) public mineOwners;
+  mapping(uint256 => address) public MineOwners;
   mapping(address => bool) public changeAllowed;
   mapping(uint8 => address) public token;
 
@@ -72,14 +72,14 @@ contract MinerGame is IERC721Receiver, Ownable{
     _player.nftId = _nftId;
     _player.stakeTime = block.timestamp;
 
-    mineOwners[_nftId] = msg.sender;
+    MineOwners[_nftId] = msg.sender;
 
     emit ImportNft(msg.sender, _nftId, block.timestamp);
   }
 
   //unstake mine NFT
   function exportNft(uint256 _nftId) external {
-    require(mineOwners[_nftId] == msg.sender, "MinerGame: Not the owner");
+    require(MineOwners[_nftId] == msg.sender, "MinerGame: Not the owner");
 
     MinerTransaction nft = MinerTransaction(mineNft);
     nft.safeTransferFrom(address(this), msg.sender, _nftId);
@@ -88,7 +88,7 @@ contract MinerGame is IERC721Receiver, Ownable{
     delete _player.nftId;
     delete _player.stakeTime;
 
-    delete mineOwners[_nftId];
+    delete MineOwners[_nftId];
 
     emit ExportNft(msg.sender, _nftId, block.timestamp);        
   }
