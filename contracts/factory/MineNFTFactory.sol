@@ -3,7 +3,7 @@ pragma solidity 0.6.7;
 
 import "./../openzeppelin/contracts/access/AccessControl.sol";
 import "./../openzeppelin/contracts/math/SafeMath.sol";
-import "./../nfts/MinerTransaction.sol";
+import "./../nfts/MineNFT.sol";
 // import "./NftTypes.sol";
 
 /// @title Nft Factory mints Mine NFTs
@@ -13,17 +13,17 @@ import "./../nfts/MinerTransaction.sol";
 ///   Generator role - allows to mint NFT of any quality.
 ///
 /// Nft Factory can revoke the role, or give it to any number of contracts.
-contract MinerNFTFactory is AccessControl {
+contract MineNFTFactory is AccessControl {
     using SafeMath for uint256;
     // using NftTypes for NftTypes;
 
     bytes32 public constant STATIC_ROLE = keccak256("STATIC");
     bytes32 public constant GENERATOR_ROLE = keccak256("GENERATOR");
 
-    MinerTransaction private nft;
+    MineNFT private nft;
     
     constructor(address _nft) public {
-	    nft = MinerTransaction(_nft);
+	    nft = MineNFT(_nft);
 	    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -40,7 +40,7 @@ contract MinerNFTFactory is AccessControl {
     // Only owner
     //--------------------------------------------------
    function setNft(address _nft) public onlyAdmin {
-	   nft = MinerTransaction(_nft);
+	   nft = MineNFT(_nft);
    }
 
    /// @dev Add an account to the admin role. Restricted to admins.

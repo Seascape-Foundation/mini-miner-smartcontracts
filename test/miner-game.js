@@ -1,7 +1,7 @@
 // import expectThrow from './expectThrow';
 
-var Nft = artifacts.require("./MinerTransaction.sol");
-var Factory = artifacts.require("./MinerNFTFactory.sol");
+var Nft = artifacts.require("./MineNFT.sol");
+var Factory = artifacts.require("./MineNFTFactory.sol");
 var Crowns = artifacts.require("./CrownsToken.sol");
 var Mscp = artifacts.require("./MscpToken.sol");
 var MinerGame = artifacts.require("MinerGame");

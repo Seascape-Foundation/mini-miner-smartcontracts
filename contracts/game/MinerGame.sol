@@ -6,7 +6,7 @@ import "./../openzeppelin/contracts/access/Ownable.sol";
 import "./../openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./../openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./../openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "./../nfts/MinerTransaction.sol";
+import "./../nfts/MineNFT.sol";
 
 contract MinerGame is IERC721Receiver, Ownable{
 
@@ -54,8 +54,8 @@ contract MinerGame is IERC721Receiver, Ownable{
   function importNft(uint256 _nftId, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_nftId > 0, "MinerGame: nft Id invalid");
 
-    MinerTransaction nft = MinerTransaction(mineNft);
-    require(nft.ownerOf(_nftId) == msg.sender, "MinerGame: Not MinerTransaction owner");
+    MineNFT nft = MineNFT(mineNft);
+    require(nft.ownerOf(_nftId) == msg.sender, "MinerGame: Not mineNft owner");
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
@@ -81,7 +81,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   function exportNft(uint256 _nftId) external {
     require(mineOwners[_nftId] == msg.sender, "MinerGame: Not the owner");
 
-    MinerTransaction nft = MinerTransaction(mineNft);
+    MineNFT nft = MineNFT(mineNft);
     nft.safeTransferFrom(address(this), msg.sender, _nftId);
 
     PlayerParams storage _player = player[msg.sender];

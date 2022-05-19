@@ -7,7 +7,7 @@ import "./../openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./../openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
 
 /// @author Season Lei
-contract MinerTransaction is ERC721, ERC721Burnable, Ownable {
+contract MineNFT is ERC721, ERC721Burnable, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private nftId;
