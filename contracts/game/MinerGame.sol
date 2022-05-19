@@ -26,7 +26,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
   mapping(address => PlayerParams) public player;
   mapping(uint256 => address) public MineOwners;
-  mapping(address => bool) public tokenType;
+  mapping(address => bool) public changeAllowed;
   mapping(uint8 => address) public token;
 
   constructor(address _token, address _nft, address _verifier) public {
@@ -38,7 +38,7 @@ contract MinerGame is IERC721Receiver, Ownable{
     mineNft     = _nft;
     verifier    = _verifier;
 
-    tokenType[_token] = true;
+    changeAllowed[_token] = true;
     token[typeId]     = _token;
   }
 
@@ -132,7 +132,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   function checkToken(uint8 _typeId) public view returns(bool) {
     address _tokenAddress = token[_typeId];
 
-    if(tokenType[_tokenAddress]) {
+    if(changeAllowed[_tokenAddress]) {
       return true;
     }
 
@@ -186,9 +186,9 @@ contract MinerGame is IERC721Receiver, Ownable{
   //Add tokens that can be exchanged for gold
   function addToken(address _token) public onlyOwner {
     require(_token != address(0), "MinerGame: Token can't be zero address");
-    require(!tokenType[_token], "MinerGame: This token is exist");
+    require(!changeAllowed[_token], "MinerGame: This token is exist");
 
-    tokenType[_token] = true;
+    changeAllowed[_token] = true;
     token[++typeId] = _token;
 
     emit AddToken(_token, typeId, block.timestamp);
