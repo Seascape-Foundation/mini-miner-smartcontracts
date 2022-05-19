@@ -19,6 +19,8 @@ contract MinerGame is IERC721Receiver, Ownable{
   uint256 public ratio = 15000;       //Subscription Ratio: 15000 gold can exchange 1 token
   uint8 public typeId;
 
+  uint256 public nonce = 0;
+
   struct PlayerParams {
     uint256 nftId;
     uint256 stakeTime;
@@ -59,7 +61,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_nftId, msg.sender));
+      bytes32 message         = keccak256(abi.encodePacked(_nftId, msg.sender, address(this), nonce));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
@@ -67,6 +69,8 @@ contract MinerGame is IERC721Receiver, Ownable{
     }
 
     nft.safeTransferFrom(msg.sender, address(this), _nftId);
+
+    nonce++;
 
     PlayerParams storage _player = player[msg.sender];
     _player.nftId = _nftId;
@@ -114,7 +118,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender));
+      bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender, nonce, address(this)));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 

@@ -33,12 +33,18 @@ contract('mine MinerGame', async (accounts) => {
   let nftId          = 1;
   let amount         = web3.utils.toWei("1","ether");
   let gold           = 5000;
+  let nonce          = null;
+
 
   // //digital signatures
   async function signNft(nftId, player) {
     //v, r, s related stuff
-    let bytes32 = web3.eth.abi.encodeParameters(["uint256"],[nftId]); 
-    let str = bytes32 + player.substr(2);
+    let nonce = await minerGame.nonce();
+
+    let bytes1 = web3.eth.abi.encodeParameters(["uint256"],[nftId]); 
+    let bytes2 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(nonce.toString())]);
+
+    let str = bytes1 + player.substr(2) + (minerGame.address).substr(2) + bytes2.substr(2);
     let data = web3.utils.keccak256(str);
     let hash = await web3.eth.sign(data, verifier);
 
@@ -54,8 +60,12 @@ contract('mine MinerGame', async (accounts) => {
 
   async function signExchange(gold, player) {
     //v, r, s related stuff
+    let nonce = await minerGame.nonce();
+
     let bytes32 = web3.eth.abi.encodeParameters(["uint256"],[gold]); 
-    let str = bytes32 + player.substr(2);
+    let bytes2 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(nonce.toString())]);
+
+    let str = bytes32 + player.substr(2) + bytes2.substr(2) + (minerGame.address).substr(2)  ;
     let data = web3.utils.keccak256(str);
     let hash = await web3.eth.sign(data, verifier);
 
@@ -125,7 +135,7 @@ contract('mine MinerGame', async (accounts) => {
 
 
   //Add the address where the second token can be exchanged for gold
-  it("4. add second exchange token to game contract ", async () => {
+  it("4. add second exchange token to game contract (addToken method)", async () => {
     
     try{
       await minerGame.addToken(exchangeToken2, {from: gameOwner});
@@ -141,7 +151,12 @@ contract('mine MinerGame', async (accounts) => {
 
     //ERC721 approve and import token to contract
     await nft.setApprovalForAll(minerGame.address, true, {from: player});
-    await minerGame.importNft(nftId, signature[0], signature[1], signature[2], {from: player});
+
+    try{
+      await minerGame.importNft(nftId, signature[0], signature[1], signature[2], {from: player});
+    }catch(e){
+      console.log(e);
+    }
 
   });
 
@@ -154,7 +169,6 @@ contract('mine MinerGame', async (accounts) => {
     try{
       //if importNft() doesnt fail, test should pass
       await minerGame.importNft(nftId, signature[0], signature[1], signature[2], {from: player});
-      assert.fail;
     }catch(e){
       //if importNft() fails, the test should fail
       console.log(e);
