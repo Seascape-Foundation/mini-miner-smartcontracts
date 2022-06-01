@@ -19,7 +19,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   uint256 public ratio = 15000;       //Subscription Ratio: 15000 gold can exchange 1 token
   uint8 public typeId;
 
-  uint256 public nonce = 0;
+  uint256 public nonce;
 
   struct PlayerParams {
     uint256 nftId;
@@ -123,6 +123,8 @@ contract MinerGame is IERC721Receiver, Ownable{
 
       require(recover == verifier, "Verification failed about stakeToken");
     }
+
+    nonce++;
 
     uint256 _tokenAmount = _gold * MULTIPLIER / ratio;
     _safeTransfer(token[0], msg.sender, _tokenAmount);
