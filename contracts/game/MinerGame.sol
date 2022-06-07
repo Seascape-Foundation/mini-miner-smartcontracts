@@ -109,15 +109,21 @@ contract MinerGame is IERC721Receiver, Ownable{
     emit TokenChangeGold(msg.sender, _amount, block.timestamp);     
   }
 
+
   //Exchange  gold coins for tokens
   function goldChangeToken(uint256 _gold, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_gold > 0, "MinerGame: The exchange amount must greater than zero");
+
+    uint256 chainId;   
+    assembly {
+        chainId := chainid()
+    }
 
     PlayerParams storage _player = player[msg.sender];
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender, nonce, address(this)));
+      bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender, nonce, address(this), chainId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 

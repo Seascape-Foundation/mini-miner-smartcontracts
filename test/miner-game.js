@@ -34,6 +34,7 @@ contract('mine MinerGame', async (accounts) => {
   let amount         = web3.utils.toWei("1","ether");
   let gold           = 5000;
   let nonce          = null;
+  let chainId        = 0;
 
 
   // //digital signatures
@@ -61,11 +62,13 @@ contract('mine MinerGame', async (accounts) => {
   async function signExchange(gold, player) {
     //v, r, s related stuff
     let nonce = await minerGame.nonce();
-
-    let bytes32 = web3.eth.abi.encodeParameters(["uint256"],[gold]); 
+    let chainId = await web3.eth.net.getId();
+    console.log(chainId);
+    let bytes1 = web3.eth.abi.encodeParameters(["uint256"],[gold]); 
     let bytes2 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(nonce.toString())]);
+    let bytes3 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(chainId.toString())]);
 
-    let str = bytes32 + player.substr(2) + bytes2.substr(2) + (minerGame.address).substr(2)  ;
+    let str = bytes1 + player.substr(2) + bytes2.substr(2) + (minerGame.address).substr(2) + bytes3.substr(2);
     let data = web3.utils.keccak256(str);
     let hash = await web3.eth.sign(data, verifier);
 
@@ -77,7 +80,6 @@ contract('mine MinerGame', async (accounts) => {
     }
     return [v, r, s];
   }
-
 
   // before player starts, need a few things prepare.
   // one of things to allow nft to be minted by nft factory
