@@ -17,7 +17,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   address public rewardToken;
   address public verifier;
   uint256 public ratio = 15000;       //Subscription Ratio: 15000 gold can exchange 1 token
-  uint8 public typeId;
+  uint256 public typeId;
 
   uint256 public nonce;
 
@@ -29,14 +29,14 @@ contract MinerGame is IERC721Receiver, Ownable{
   mapping(address => PlayerParams) public player;
   mapping(uint256 => address) public mineOwners;
   mapping(address => bool) public changeAllowed;
-  mapping(uint8 => address) public token;
+  mapping(uint256 => address) public token;
 
   event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time);
   event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
   event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
   event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
   event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
-  event AddToken(address indexed tokenAddress, uint8 indexed typeId, uint256 time);
+  event AddToken(address indexed tokenAddress, uint256 indexed typeId, uint256 time);
 
   constructor(address _token, address _nft, address _verifier) public {
     require(_token != address(0), "MinerGame: Token can't be zero address");
@@ -97,7 +97,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //Exchange tokens for gold coins
-  function tokenChangeGold(uint8 _typeId, uint256 _amount) external {
+  function tokenChangeGold(uint256 _typeId, uint256 _amount) external {
     require(_amount > 0, "MinerGame: The exchange amount can't be 0");
     require(checkToken(_typeId), "MinerGame: Do not have this token type");
 
@@ -140,7 +140,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //Check whether this token can be exchanged for gold
-  function checkToken(uint8 _typeId) public view returns(bool) {
+  function checkToken(uint256 _typeId) public view returns(bool) {
     address _tokenAddress = token[_typeId];
 
     if(changeAllowed[_tokenAddress]) {
