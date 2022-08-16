@@ -40,7 +40,7 @@ contract('mine MinerGame', async (accounts) => {
   // //digital signatures
   async function signNft(nftId, player) {
     //v, r, s related stuff
-    let nonce = await minerGame.nonce();
+    let nonce = await minerGame.nonce(player);
 
     let bytes1 = web3.eth.abi.encodeParameters(["uint256"],[nftId]); 
     let bytes2 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(nonce.toString())]);
@@ -61,9 +61,9 @@ contract('mine MinerGame', async (accounts) => {
 
   async function signExchange(gold, player) {
     //v, r, s related stuff
-    let nonce = await minerGame.nonce();
+    let nonce = await minerGame.nonce(player);
     let chainId = await web3.eth.net.getId();
-    console.log(chainId);
+    console.log(chain);
     let bytes1 = web3.eth.abi.encodeParameters(["uint256"],[gold]); 
     let bytes2 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(nonce.toString())]);
     let bytes3 = web3.eth.abi.encodeParameters(["uint256"],[parseInt(chainId.toString())]);
