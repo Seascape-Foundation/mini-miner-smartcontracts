@@ -84,7 +84,6 @@ contract MinerGame is IERC721Receiver, Ownable{
     require(mineOwners[_nftId] == msg.sender, "MinerGame: Not the owner");
 
     MineNFT nft = MineNFT(mineNft);
-    nft.safeTransferFrom(address(this), msg.sender, _nftId);
 
     PlayerParams storage _player = player[msg.sender];
     delete _player.nftId;
@@ -92,7 +91,8 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     delete mineOwners[_nftId];
 
-    emit ExportNft(msg.sender, _nftId, block.timestamp);        
+    emit ExportNft(msg.sender, _nftId, block.timestamp);    
+    nft.safeTransferFrom(address(this), msg.sender, _nftId);    
   }
 
   //Exchange tokens for gold coins
@@ -117,8 +117,6 @@ contract MinerGame is IERC721Receiver, Ownable{
     assembly {
         chainId := chainid()
     }
-
-    PlayerParams storage _player = player[msg.sender];
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
