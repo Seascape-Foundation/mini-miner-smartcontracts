@@ -93,7 +93,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      *
      * Included just to follow the standard of OpenZeppelin.
      */
-    function burn(uint256 amount) public {
+    function burn(uint256 amount) external {
         require(false, "Only burnFrom is allowed");
     }
 
@@ -108,7 +108,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      * - the caller must have allowance for ``accounts``'s tokens of at least
      * `amount`.
      */
-    function burnFrom(address account, uint256 amount) public onlyBridge {
+    function burnFrom(address account, uint256 amount) external onlyBridge {
         uint256 currentAllowance = allowance(account, _msgSender());
         require(currentAllowance >= amount, "burn amount exceeds allowance");
 
@@ -124,7 +124,7 @@ contract CrownsToken is Context, IERC20, Ownable {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public pure returns (string memory) {
+    function name() external pure returns (string memory) {
         return _name;
     }
 
@@ -132,7 +132,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public pure returns (string memory) {
+    function symbol() external pure returns (string memory) {
         return _symbol;
     }
 
@@ -145,21 +145,21 @@ contract CrownsToken is Context, IERC20, Ownable {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view returns (uint8) {
+    function decimals() external view returns (uint8) {
         return _decimals;
     }
 
     /**
      * @dev Returns the amount of tokens in existence.
      */
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() external view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev Returns the amount of tokens owned by `account`.
      */
-    function balanceOf(address account) public view override returns (uint256) {
+    function balanceOf(address account) external view override returns (uint256) {
         return _getBalance(account);
     }
 
@@ -170,7 +170,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -200,7 +200,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      *
      * Emits an {Approval} event.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount) external virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -215,7 +215,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      * Emits a {Transfer} event.
      */
     function transferFrom(address sender, address recipient, uint256 amount)
-        public
+        external
         virtual
         override
         returns (bool)
@@ -238,7 +238,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
@@ -258,7 +258,7 @@ contract CrownsToken is Context, IERC20, Ownable {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
+        external
         virtual
         returns (bool)
     {

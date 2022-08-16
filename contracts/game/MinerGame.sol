@@ -182,7 +182,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
   //Owner methods
   //withdraw token
-  function withdraw(address _token, uint256 _amount) public onlyOwner{
+  function withdraw(address _token, uint256 _amount) external onlyOwner{
     require(_token != address(0), "MinerGame: Token can't be zero address");
     require(_amount > 0, "MinerGame: Must be greater than 0");
 
@@ -192,7 +192,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //Add tokens that can be exchanged for gold
-  function addToken(address _token) public onlyOwner {
+  function addToken(address _token) external onlyOwner {
     require(_token != address(0), "MinerGame: Token can't be zero address");
     require(!changeAllowed[_token], "MinerGame: This token is exist");
 
@@ -203,7 +203,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //Change the ratio of tokens to gold coins
-  function setScale(uint256 _ratio) public onlyOwner {
+  function setScale(uint256 _ratio) external onlyOwner {
     require(_ratio > 0, "MinerGame: Ratio must greater than zero");
     ratio = _ratio;
   }

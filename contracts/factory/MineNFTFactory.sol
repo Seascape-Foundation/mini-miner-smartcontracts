@@ -31,7 +31,7 @@ contract MineNFTFactory is AccessControl {
     // Only Mine Staking contract
     //--------------------------------------------------
 
-   function mint(address _owner, uint256 _generation, uint8 _quality) public onlyGenerator returns(uint256) {
+   function mint(address _owner, uint256 _generation, uint8 _quality) external onlyGenerator returns(uint256) {
 	  require (_quality > 0 && _quality < 6, "NFT Factory: invalid quality");
 	  return nft.mint(_owner, _generation, _quality);
    }
@@ -39,18 +39,18 @@ contract MineNFTFactory is AccessControl {
     //--------------------------------------------------
     // Only owner
     //--------------------------------------------------
-   function setNft(address _nft) public onlyAdmin {
+   function setNft(address _nft) external onlyAdmin {
 	   nft = MineNFT(_nft);
    }
 
    /// @dev Add an account to the admin role. Restricted to admins.
-   function addAdmin(address account) public virtual onlyAdmin
+   function addAdmin(address account) external virtual onlyAdmin
    {
       grantRole(DEFAULT_ADMIN_ROLE, account);
    }
 
    /// @dev Remove oneself from the admin role.
-   function renounceAdmin() public virtual
+   function renounceAdmin() external virtual
    {
 	  renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
    }
@@ -82,13 +82,13 @@ contract MineNFTFactory is AccessControl {
    }
      
    /// @dev Add an account to the user role. Restricted to admins.
-   function addGenerator(address account) public virtual onlyAdmin
+   function addGenerator(address account) external virtual onlyAdmin
    {
 	  grantRole(GENERATOR_ROLE, account);
    }
 
    /// @dev Remove an account from the user role. Restricted to admins.
-   function removeGenerator(address account) public virtual onlyAdmin
+   function removeGenerator(address account) external virtual onlyAdmin
    {
 	  revokeRole(GENERATOR_ROLE, account);
    }
