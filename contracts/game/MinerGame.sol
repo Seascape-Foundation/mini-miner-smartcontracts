@@ -54,6 +54,9 @@ contract MinerGame is IERC721Receiver, Ownable{
   function importNft(uint256 _nftId, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_nftId > 0, "MinerGame: nft Id invalid");
 
+    PlayerParams storage _player = player[msg.sender];
+    require(!(_player.nftId > 0), "MinerGame: You've already staked an NFT");
+
     MineNFT nft = MineNFT(mineNft);
     require(nft.ownerOf(_nftId) == msg.sender, "MinerGame: Not mineNft owner");
 
@@ -70,7 +73,6 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     nonce[msg.sender]++;
 
-    PlayerParams storage _player = player[msg.sender];
     _player.nftId = _nftId;
     _player.stakeTime = block.timestamp;
 
