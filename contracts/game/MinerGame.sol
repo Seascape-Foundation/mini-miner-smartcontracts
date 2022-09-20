@@ -7,6 +7,7 @@ import "./../openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./../openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./../openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./../nfts/MineNFT.sol";
+import "./../factory/MineNFTFactory.sol";
 
 contract MinerGame is IERC721Receiver, Ownable{
 
@@ -18,6 +19,8 @@ contract MinerGame is IERC721Receiver, Ownable{
   address public verifier;
   uint256 public ratio = 15000;       //Subscription Ratio: 15000 gold can exchange 1 token
   uint256 public typeId;
+
+  MineNFTFactory nftFactory;
 
   struct PlayerParams {
     uint256 nftId;
@@ -36,8 +39,9 @@ contract MinerGame is IERC721Receiver, Ownable{
   event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
   event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
   event AddToken(address indexed tokenAddress, uint256 indexed typeId, uint256 time);
+  event MintNft(address indexed owner, uint256 indexed generation, uint8 indexed quality, uint256 time);
 
-  constructor(address _token, address _nft, address _verifier) public {
+  constructor(address _token, address _nft, address _factory, address _verifier) public {
     require(_token != address(0), "MinerGame: Token can't be zero address");
     require(_nft != address(0), "MinerGame: Nft can't be zero address");
     require(_verifier != address(0), "MinerGame: Verifier can't be zero address");
@@ -45,6 +49,7 @@ contract MinerGame is IERC721Receiver, Ownable{
     rewardToken = _token;
     mineNft     = _nft;
     verifier    = _verifier;
+    nftFactory  = MineNFTFactory(_factory);
 
     changeAllowed[_token] = true;
     token[typeId]     = _token;
@@ -136,6 +141,29 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     emit GoldChangeToken(msg.sender, _gold, _tokenAmount, block.timestamp);  
 
+  }
+
+  //
+  function mintNft(uint256 _generation, uint8 _quality, uint8 _v, bytes32 _r, bytes32 _s) external{
+
+    require (_generation >= 0, "MinerGame: generation wrong");
+    require (_quality > 0 && _quality < 6, "MinerGame: quality wrong");
+
+    {
+      bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
+      bytes32 message         = keccak256(abi.encodePacked(msg.sender, address(this), _generation, _quality, nonce[msg.sender]));
+      bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
+      address recover         = ecrecover(hash, _v, _r, _s);
+
+      require(recover == verifier, "Verification failed about stakeToken");
+    }
+
+    uint256 nftId = nftFactory.mint(msg.sender, _generation, _quality);
+    require(nftId >= 0, "MinerGame: failed to mint a nft!");
+
+    nonce[msg.sender]++;
+
+    emit MintNft(msg.sender, _generation, _quality, block.timestamp);
   }
 
   //Check whether this token can be exchanged for gold
