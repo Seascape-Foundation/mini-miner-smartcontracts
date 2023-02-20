@@ -12,19 +12,22 @@ import "./../factory/MineNFTFactory.sol";
 contract MinerGame is IERC721Receiver, Ownable{
 
   using SafeMath for uint256;
-  uint256 constant MULTIPLIER = 10**18;
+  using SafeERC20 for IERC20;
 
   address public mineNft;
   address public rewardToken;
   address public verifier;
-  uint256 public ratio = 15000;       //Subscription Ratio: 15000 gold can exchange 1 token
   uint256 public typeId;
+  uint256 public cooldown;
+  address public bank;
+  address public vault;
 
   MineNFTFactory nftFactory;
 
   struct PlayerParams {
     uint256 nftId;
     uint256 stakeTime;
+    uint256 tokenBuyingTime;
   }
 
   mapping(address => PlayerParams) public player;
@@ -36,23 +39,30 @@ contract MinerGame is IERC721Receiver, Ownable{
   event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time);
   event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
   event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
-  event GoldChangeToken(address indexed owner, uint256 indexed gold, uint256 indexed tokenAmount, uint256 time);
   event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
   event AddToken(address indexed tokenAddress, uint256 indexed typeId, uint256 time);
   event MintNft(address indexed owner, uint256 indexed generation, uint8 indexed quality, uint256 time);
+  event TokenBuyPack(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time);  
+  event GoldChangeToken(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time);   
 
-  constructor(address _token, address _nft, address _factory, address _verifier) public {
+  constructor(address _token, address _nft, address _factory, address _verifier, address _bank, address _vault) public {
     require(_token != address(0), "MinerGame: Token can't be zero address");
     require(_nft != address(0), "MinerGame: Nft can't be zero address");
     require(_verifier != address(0), "MinerGame: Verifier can't be zero address");
+    require(_bank != address(0), "MinerGame: Bank can't be zero address");
+    require(_vault != address(0), "MinerGame: Vault can't be zero address");
 
     rewardToken = _token;
     mineNft     = _nft;
     verifier    = _verifier;
     nftFactory  = MineNFTFactory(_factory);
+    bank        = _bank;
+    vault       = _vault;
 
     changeAllowed[_token] = true;
     token[typeId]     = _token;
+
+    cooldown = 86400 * 7;     //cooldown time is 7 day
   }
 
   //stake mine NFT
@@ -71,7 +81,7 @@ contract MinerGame is IERC721Receiver, Ownable{
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
-      require(recover == verifier, "Verification failed about stakeToken");
+      require(recover == verifier, "MinerGame: Verification failed about importNft");
     }
 
     nft.safeTransferFrom(msg.sender, address(this), _nftId);
@@ -102,7 +112,7 @@ contract MinerGame is IERC721Receiver, Ownable{
     nft.safeTransferFrom(address(this), msg.sender, _nftId);    
   }
 
-  //Exchange tokens for gold coins
+  //token buy gold
   function tokenChangeGold(uint256 _typeId, uint256 _amount) external {
     require(_amount > 0, "MinerGame: The exchange amount can't be 0");
     require(checkToken(_typeId), "MinerGame: Do not have this token type");
@@ -110,40 +120,69 @@ contract MinerGame is IERC721Receiver, Ownable{
     IERC20 _token = IERC20(token[_typeId]); 
     require(_token.balanceOf(msg.sender) >= _amount, "MinerGame: Not enough token to stake");
     
-    _token.transferFrom(msg.sender, address(this), _amount);
+    _token.safeTransferFrom(msg.sender, bank, _amount);
 
     emit TokenChangeGold(msg.sender, _amount, block.timestamp);     
   }
 
+  //token buy pack
+  function tokenBuyPack(uint256 _typeId, uint256 _amount, uint256 _packId, uint8 _v, bytes32 _r, bytes32 _s) external{
+    require(_amount > 0, "MinerGame: The token amount must greater than zero");
+    require(checkToken(_typeId), "MinerGame: Do not have this token type");
 
-  //Exchange  gold coins for tokens
-  function goldChangeToken(uint256 _gold, uint8 _v, bytes32 _r, bytes32 _s) external {
-    require(_gold > 0, "MinerGame: The exchange amount must greater than zero");
+    IERC20 _token = IERC20(token[_typeId]); 
 
     uint256 chainId;   
     assembly {
         chainId := chainid()
-    }
+    } 
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_gold, msg.sender, nonce[msg.sender], address(this), chainId));
+      bytes32 message         = keccak256(abi.encodePacked(_amount, msg.sender, nonce[msg.sender], address(this), chainId, _packId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
-      require(recover == verifier, "Verification failed about stakeToken");
+      require(recover == verifier, "MinerGame: Verification failed about tokenBuyPack");
     }
 
     nonce[msg.sender]++;
 
-    uint256 _tokenAmount = _gold * MULTIPLIER / ratio;
-    _safeTransfer(token[0], msg.sender, _tokenAmount);
+    _token.safeTransferFrom(msg.sender, bank, _amount);
 
-    emit GoldChangeToken(msg.sender, _gold, _tokenAmount, block.timestamp);  
-
+    emit TokenBuyPack(msg.sender, _typeId, _amount, _packId, block.timestamp);   
   }
 
-  //
+  //gold buy token, It has cooldown time
+  function goldChangeToken(uint256 _typeId, uint256 _amount, uint256 _packId, uint8 _v, bytes32 _r, bytes32 _s) external{
+    require(_amount > 0, "MinerGame: The token amount must greater than zero");
+    require(checkToken(_typeId), "MinerGame: Do not have this token type");
+    require(checkCooldown(), "MinerGame: gold-token CD time hasn't come yet");
+
+    uint256 chainId;   
+    assembly {
+        chainId := chainid()
+    } 
+
+    {
+      bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
+      bytes32 message         = keccak256(abi.encodePacked(_amount, _typeId, msg.sender, nonce[msg.sender], address(this), chainId, _packId));
+      bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
+      address recover         = ecrecover(hash, _v, _r, _s);
+
+      require(recover == verifier, "MinerGame: Verification failed about goldChangeToken");
+    }
+
+    nonce[msg.sender]++;
+
+    PlayerParams storage _player = player[msg.sender];
+    _player.tokenBuyingTime = block.timestamp;
+
+    _safeTransfer(token[_typeId], msg.sender, _amount);
+
+    emit GoldChangeToken(msg.sender, _typeId, _amount, _packId, block.timestamp);   
+  }
+
   function mintNft(uint256 _generation, uint8 _quality, uint8 _v, bytes32 _r, bytes32 _s) external{
 
     require (_generation >= 0, "MinerGame: generation wrong");
@@ -155,7 +194,7 @@ contract MinerGame is IERC721Receiver, Ownable{
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
-      require(recover == verifier, "Verification failed about stakeToken");
+      require(recover == verifier, "MinerGame: Verification failed about mintNft");
     }
 
     uint256 nftId = nftFactory.mint(msg.sender, _generation, _quality);
@@ -177,50 +216,45 @@ contract MinerGame is IERC721Receiver, Ownable{
     return false;
   }
 
+  //Check the cooldown of gold purchase tokens
+  function checkCooldown() public view returns(bool) {
+    if(cooldown == 0){
+      return true;
+    }
+
+    PlayerParams storage _player = player[msg.sender];
+
+    uint256 cooldownTime = _player.tokenBuyingTime;
+
+    if(cooldownTime == 0 || block.timestamp - cooldownTime > cooldown) {
+      return true;
+    }
+
+    return false;
+  }
+
   //Safe Transfer
   function _safeTransfer(address _token, address _to, uint256 _amount) internal {
     if (_token != address(0)) {
       IERC20 _rewardToken = IERC20(_token);
 
-      uint256 _balance = _rewardToken.balanceOf(address(this));
-      require(_amount <= _balance, "do not have enough token to reward");
+      uint256 _balance = _rewardToken.balanceOf(vault);
+      require(_amount <= _balance, "MinerGame: do not have enough token to reward");
 
       uint256 _beforBalance = _rewardToken.balanceOf(_to);
-      _rewardToken.transfer(_to, _amount);
+      _rewardToken.safeTransferFrom(vault, _to, _amount);
 
-      require(_rewardToken.balanceOf(_to) == _beforBalance + _amount, "Invalid transfer");
+      require(_rewardToken.balanceOf(_to) == _beforBalance + _amount, "MinerGame: Invalid transfer");
     } else {
 
       uint256 _balance = address(this).balance;
-      require(_amount <= _balance, "Do not have enough token to reward");
+      require(_amount <= _balance, "MinerGame: Do not have enough token to reward");
 
       payable(_to).transfer(_amount);
     }
   }
 
-  /// @dev encrypt token data
-  /// @return encrypted data
-  function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external override returns (bytes4) {
-    return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
-  }
-
-  // Accept native tokens.
-  receive() external payable {
-    //React to receiving ether
-  }
-
-
-  //Owner methods
-  //withdraw token
-  function withdraw(address _token, uint256 _amount) external onlyOwner{
-    require(_token != address(0), "MinerGame: Token can't be zero address");
-    require(_amount > 0, "MinerGame: Must be greater than 0");
-
-    _safeTransfer(_token, owner(), _amount);
-
-    emit Withdraw(_token, _amount, msg.sender, block.timestamp);
-  }
-
+  //***owner methods***//
   //Add tokens that can be exchanged for gold
   function addToken(address _token) external onlyOwner {
     require(_token != address(0), "MinerGame: Token can't be zero address");
@@ -232,10 +266,44 @@ contract MinerGame is IERC721Receiver, Ownable{
     emit AddToken(_token, typeId, block.timestamp);
   }
 
-  //Change the ratio of tokens to gold coins
-  function setScale(uint256 _ratio) external onlyOwner {
-    require(_ratio > 0, "MinerGame: Ratio must greater than zero");
-    ratio = _ratio;
+  //set CD time 
+  function setCooldown(uint256 _newCooldown) external onlyOwner{
+    require(_newCooldown > 0, "MinerGame: CD_Cooldown must be greater than 0");
+    cooldown = _newCooldown;
   }
+
+  function setVerifier(address _verifier) external onlyOwner {
+    verifier = _verifier;
+  }
+
+  function setBank(address _bank) external onlyOwner {
+    require(_bank != address(0), "MinerGame: Bank can't be zero address");
+    bank = _bank;
+  }
+
+  function setVault(address _vault) external onlyOwner {
+    require(_vault != address(0), "MinerGame: Vault can't be zero address");
+    vault = _vault;
+  }
+
+  function setRewardToken(address _token) external onlyOwner {
+    require(_token != address(0), "MinerGame: rewardToken can't be zero address");
+    rewardToken = _token;
+  }
+  //***owner methods***//
+
+
+
+  // Accept native tokens.
+  receive() external payable {
+    //React to receiving ether
+  }
+
+  /// @dev encrypt token data
+  /// @return encrypted data
+  function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external override returns (bytes4) {
+    return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+  }
+
   
 }
