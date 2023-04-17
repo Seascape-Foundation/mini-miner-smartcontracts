@@ -36,14 +36,14 @@ contract MinerGame is IERC721Receiver, Ownable{
   mapping(uint256 => address) public token;
   mapping(address => uint256) public nonce;
 
-  event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time);
-  event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time);
-  event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time);
-  event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time);
+  event ImportNft(address indexed owner, uint256 indexed nftId, uint256 time, bytes32 userId);
+  event ExportNft(address indexed owner, uint256 indexed nftId, uint256 time, bytes32 userId);
+  event TokenChangeGold(address indexed owner, uint256 indexed tokenAmount, uint256 time, bytes32 userId);
+  event Withdraw(address indexed tokenAddress, uint256 indexed tokenAmount, address indexed receiver, uint256 time, bytes32 userId);
   event AddToken(address indexed tokenAddress, uint256 indexed typeId, uint256 time);
-  event MintNft(address indexed owner, uint256 indexed generation, uint8 indexed quality, uint256 time);
-  event TokenBuyPack(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time);  
-  event GoldChangeToken(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time);   
+  event MintNft(address indexed owner, uint256 indexed generation, uint8 indexed quality, uint256 time, bytes32 userId);
+  event TokenBuyPack(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time, bytes32 userId);  
+  event GoldChangeToken(address indexed owner, uint256 typeId, uint256 indexed tokenAmount, uint256 indexed packId, uint256 time, bytes32 userId);   
 
   constructor(address _token, address _nft, address _factory, address _verifier, address _bank, address _vault) public {
     require(_token != address(0), "MinerGame: Token can't be zero address");
@@ -66,7 +66,7 @@ contract MinerGame is IERC721Receiver, Ownable{
   }
 
   //stake mine NFT
-  function importNft(uint256 _nftId, uint8 _v, bytes32 _r, bytes32 _s) external {
+  function importNft(uint256 _nftId, bytes32 _userId, uint8 _v, bytes32 _r, bytes32 _s) external {
     require(_nftId > 0, "MinerGame: nft Id invalid");
 
     PlayerParams storage _player = player[msg.sender];
@@ -77,7 +77,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_nftId, msg.sender, address(this), nonce[msg.sender]));
+      bytes32 message         = keccak256(abi.encodePacked(_nftId, msg.sender, address(this), nonce[msg.sender], _userId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
@@ -93,11 +93,11 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     mineOwners[_nftId] = msg.sender;
 
-    emit ImportNft(msg.sender, _nftId, block.timestamp);
+    emit ImportNft(msg.sender, _nftId, block.timestamp, _userId);
   }
 
   //unstake mine NFT
-  function exportNft(uint256 _nftId) external {
+  function exportNft(uint256 _nftId, bytes32 _userId) external {
     require(mineOwners[_nftId] == msg.sender, "MinerGame: Not the owner");
 
     MineNFT nft = MineNFT(mineNft);
@@ -108,12 +108,12 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     delete mineOwners[_nftId];
 
-    emit ExportNft(msg.sender, _nftId, block.timestamp);    
+    emit ExportNft(msg.sender, _nftId, block.timestamp, _userId);    
     nft.safeTransferFrom(address(this), msg.sender, _nftId);    
   }
 
   //token buy gold
-  function tokenChangeGold(uint256 _typeId, uint256 _amount) external {
+  function tokenChangeGold(uint256 _typeId, uint256 _amount, bytes32 _userId) external {
     require(_amount > 0, "MinerGame: The exchange amount can't be 0");
     require(checkToken(_typeId), "MinerGame: Do not have this token type");
 
@@ -122,11 +122,11 @@ contract MinerGame is IERC721Receiver, Ownable{
     
     _token.safeTransferFrom(msg.sender, bank, _amount);
 
-    emit TokenChangeGold(msg.sender, _amount, block.timestamp);     
+    emit TokenChangeGold(msg.sender, _amount, block.timestamp, _userId);     
   }
 
   //token buy pack
-  function tokenBuyPack(uint256 _typeId, uint256 _amount, uint256 _packId, uint8 _v, bytes32 _r, bytes32 _s) external{
+  function tokenBuyPack(uint256 _typeId, uint256 _amount, uint256 _packId, bytes32 _userId, uint8 _v, bytes32 _r, bytes32 _s) external{
     require(_amount > 0, "MinerGame: The token amount must greater than zero");
     require(checkToken(_typeId), "MinerGame: Do not have this token type");
 
@@ -139,7 +139,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_amount, msg.sender, nonce[msg.sender], address(this), chainId, _packId));
+      bytes32 message         = keccak256(abi.encodePacked(_amount, msg.sender, nonce[msg.sender], address(this), chainId, _packId, _userId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
@@ -150,11 +150,11 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     _token.safeTransferFrom(msg.sender, bank, _amount);
 
-    emit TokenBuyPack(msg.sender, _typeId, _amount, _packId, block.timestamp);   
+    emit TokenBuyPack(msg.sender, _typeId, _amount, _packId, block.timestamp, _userId);   
   }
 
   //gold buy token, It has cooldown time
-  function goldChangeToken(uint256 _typeId, uint256 _amount, uint256 _packId, uint8 _v, bytes32 _r, bytes32 _s) external{
+  function goldChangeToken(uint256 _typeId, uint256 _amount, uint256 _packId, bytes32 _userId, uint8 _v, bytes32 _r, bytes32 _s) external{
     require(_amount > 0, "MinerGame: The token amount must greater than zero");
     require(checkToken(_typeId), "MinerGame: Do not have this token type");
     require(checkCooldown(), "MinerGame: gold-token CD time hasn't come yet");
@@ -166,7 +166,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(_amount, _typeId, msg.sender, nonce[msg.sender], address(this), chainId, _packId));
+      bytes32 message         = keccak256(abi.encodePacked(_amount, _typeId, msg.sender, nonce[msg.sender], address(this), chainId, _packId, _userId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
@@ -180,17 +180,18 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     _safeTransfer(token[_typeId], msg.sender, _amount);
 
-    emit GoldChangeToken(msg.sender, _typeId, _amount, _packId, block.timestamp);   
+    emit GoldChangeToken(msg.sender, _typeId, _amount, _packId, block.timestamp, _userId);   
   }
 
-  function mintNft(uint256 _generation, uint8 _quality, uint8 _v, bytes32 _r, bytes32 _s) external{
+  // we add the user id, but we won't verify it.
+  function mintNft(uint256 _generation, uint8 _quality, bytes32 _userId, uint8 _v, bytes32 _r, bytes32 _s) external{
 
     require (_generation >= 0, "MinerGame: generation wrong");
     require (_quality > 0 && _quality < 6, "MinerGame: quality wrong");
 
     {
       bytes memory prefix     = "\x19Ethereum Signed Message:\n32";
-      bytes32 message         = keccak256(abi.encodePacked(msg.sender, address(this), _generation, _quality, nonce[msg.sender]));
+      bytes32 message         = keccak256(abi.encodePacked(msg.sender, address(this), _generation, _quality, nonce[msg.sender], _userId));
       bytes32 hash            = keccak256(abi.encodePacked(prefix, message));
       address recover         = ecrecover(hash, _v, _r, _s);
 
@@ -202,7 +203,7 @@ contract MinerGame is IERC721Receiver, Ownable{
 
     nonce[msg.sender]++;
 
-    emit MintNft(msg.sender, _generation, _quality, block.timestamp);
+    emit MintNft(msg.sender, _generation, _quality, block.timestamp, _userId);
   }
 
   //Check whether this token can be exchanged for gold
