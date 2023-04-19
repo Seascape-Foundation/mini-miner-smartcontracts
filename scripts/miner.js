@@ -39,7 +39,7 @@ let generateBuyItemSignature = async function() {
     let verifierAddress = gameOwner;
 
     // mumbai testnet
-    let minerGameAddress = "0x25315456438f60cd3752a701c6d4e374eafc6866";
+    let minerGameAddress = "0x9B572C09c2f86643e67B4e94f27528870613cc7E";
 
     //--------------------------------------------------------------
 
@@ -51,8 +51,7 @@ let generateBuyItemSignature = async function() {
     console.log(`Prepare parameters`);
     const packId = 1;
     const tokenWei = web3.utils.toWei("5", "ether");
-    // const nonce = await minerGame.nonce(playerAddress);
-    const nonce = 1;
+    const nonce = await minerGame.nonce(playerAddress);
     const chainId = await web3.eth.net.getId();
 
     console.log(`Prepare the encoded parameters`);
@@ -60,7 +59,6 @@ let generateBuyItemSignature = async function() {
     const bytes2 = web3.eth.abi.encodeParameters(['uint256'], [parseInt(nonce.toString(), 10)]);
     const bytes3 = web3.eth.abi.encodeParameters(['uint256'], [parseInt(chainId.toString(), 10)]);
     const bytes4 = web3.eth.abi.encodeParameters(['uint256'], [parseInt(packId.toString(), 10)]);
-    const bytes5 = web3.eth.abi.encodeParameters(['bytes32'], ["0x123"]);
     console.log(`Parameters prepared!`);
 
     console.log(`Sign`);
@@ -70,8 +68,7 @@ let generateBuyItemSignature = async function() {
         bytes2.substring(2) +
         minerGameAddress.substring(2) +
         bytes3.substring(2) +
-        bytes4.substring(2) + 
-        bytes5.substring(2)
+        bytes4.substring(2); 
     const data = web3.utils.keccak256(str);
 
     const signature = await web3.eth.sign(data, verifierAddress);
@@ -81,7 +78,6 @@ let generateBuyItemSignature = async function() {
     console.log(`nonce:        ${nonce}`);
     console.log(`token amount: ${tokenWei}`);
     console.log(`pack id:      ${packId}`);
-    console.log(`user id:      0x123`);
     console.log(`generated signature: ${signature}`);
 
     // v,r,s
