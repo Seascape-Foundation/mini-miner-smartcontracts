@@ -1,7 +1,7 @@
 var MineNFT = artifacts.require("./MineNFT.sol");
 
 module.exports = async function(deployer, network) {
-    await deployer.deploy(MineNFT).then(function(){
-        console.log("MineNFT contract was deployed at address: "+ MineNFT.address);
-    });
+    console.log(`Deploying MineNFT on ${network} network`);
+    await deployer.deploy(MineNFT);
+    console.log(`MineNFT was deployed at ${MineNFT.address}`);
 };
