@@ -90,24 +90,6 @@ let generateBuyItemSignature = async function() {
     console.log(`v: ${v}\nr: ${r}\ns: ${s}`);
 
     return { signature };
-
-    try{
-
-        console.log(`nft add factory!!!!`);
-        await mineNft.setFactory(nftFactoryAddress);
-        
-
-        console.log(`factory add Generator!!!!`);
-        let isGenerator = await nftFactory.isGenerator(gameOwner);
-        if(!isGenerator) {
-            await nftFactory.addGenerator(gameOwner);
-        }
-
-    }catch(e){
-        console.log(e);
-    }
-    console.log("factory fine");
-
 }.bind(this);
 
 let approveTokens = async function() {
@@ -170,24 +152,6 @@ let approveTokens = async function() {
     // 		console.log(e);
     // 	}
     // 	console.log("approve fine");
-
-
-    try{
-
-        console.log(`nft add factory!!!!`);
-        await mineNft.setFactory(nftFactoryAddress);
-        
-
-        console.log(`factory add Generator!!!!`);
-        let isGenerator = await nftFactory.isGenerator(gameOwner);
-        if(!isGenerator) {
-            await nftFactory.addGenerator(gameOwner);
-        }
-
-    }catch(e){
-        console.log(e);
-    }
-    console.log("factory fine");
 
 }.bind(this);
 
