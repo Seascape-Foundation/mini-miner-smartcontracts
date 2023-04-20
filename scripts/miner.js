@@ -4,24 +4,30 @@ let MineNft    = artifacts.require("MineNFT");
 let NftFactory    = artifacts.require("MineNFTFactory");
 
 module.exports = async function(callback) {
-    let res = await generateBuyItemSignature();
     // let res = await approveAhmetsonToken();
+    // console.log(`Tokens are approved, now generated a signature`);
+
+    res = await generateBuyItemSignature();
     callback(null, res);
 };
 
 let approveAhmetsonToken = async function() {
+    console.log(`Approving AHM token to MinerGame`);
     accounts = await web3.eth.getAccounts();
     console.log(`signer: ${accounts[0]}`);
 
     // mumbai testnet
     let testToken = "0x25736b717735d6cB3318d406F88A1A38a614E49b";
-    let minerGameAddress = "0x25315456438f60cd3752a701c6d4e374eafc6866";
+    let minerGameAddress = MinerGame.address;
+    if (!minerGameAddress) {
+        minerGameAddress = "0x9B572C09c2f86643e67B4e94f27528870613cc7E";
+    }
 
     //--------------------------------------------------------------
 
     console.log("Loading contracts...");
     let token = await ERC20.at(testToken);
-    console.log(`Smartcontracts loaded`);
+    console.log(`Contracts loaded!`);
 
     console.log(`Prepare parameters`);
     const tokenWei = web3.utils.toWei("10000", "ether");
@@ -33,20 +39,25 @@ let approveAhmetsonToken = async function() {
 }.bind(this);
 
 let generateBuyItemSignature = async function() {
+    console.log();
     accounts = await web3.eth.getAccounts();
     console.log(`signer: ${accounts[0]}`);
     let gameOwner = accounts[0];
     let verifierAddress = gameOwner;
 
     // mumbai testnet
-    let minerGameAddress = "0x9B572C09c2f86643e67B4e94f27528870613cc7E";
+    let minerGameAddress = MinerGame.address;
+    if (!minerGameAddress) {
+        minerGameAddress = "0x9B572C09c2f86643e67B4e94f27528870613cc7E";
+    }
 
     //--------------------------------------------------------------
 
     console.log("Loading contracts...");
     let minerGame = await MinerGame.at(minerGameAddress);
-    let playerAddress = "0xa2dE641D27069A8225192048f69A0694529357CF";
-    console.log(`Smartcontracts loaded`);
+    // let playerAddress = "0xa2dE641D27069A8225192048f69A0694529357CF";
+    let playerAddress = gameOwner;
+    console.log(`Contracts loaded!`);
 
     console.log(`Prepare parameters`);
     const packId = 1;
